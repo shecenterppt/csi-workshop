@@ -142,12 +142,12 @@
             <div class="csi-border bg-gray-900/90 p-8 rounded-lg w-full max-w-md text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-cyan-500/5 blur-xl"></div>
                 <i class="fa-solid fa-user-secret text-6xl text-cyan-500 mb-6 relative z-10"></i>
-                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Seccurity Workshop">ACCESS TERMINAL</h2>
-                <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="Enter ID">Enter Agent ID or Staff ID</p>
+                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="ระบบสืบสวน">ACCESS TERMINAL</h2>
+                <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="กรุณากรอกรหัสเจ้าหน้าที่">Enter Agent ID or Staff ID</p>
                 
                 <form onsubmit="handleLogin(event)" class="relative z-10 space-y-4">
                     <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., 00000)" required autocomplete="off">
-                    <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="ACCESS">INITIALIZE</button>
+                    <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="เข้าสู่ระบบ">INITIALIZE</button>
                 </form>
             </div>
         </div>
@@ -156,9 +156,10 @@
         <div id="view-admin" class="hidden space-y-6">
             <div class="flex flex-wrap gap-4 border-b border-gray-700 pb-2 overflow-x-auto">
                 <button onclick="switchAdminTab('cases')" class="admin-tab text-cyan-400 border-b-2 border-cyan-400 px-4 py-2 font-bold transition-all whitespace-nowrap" data-target="cases" data-en="Case Management" data-th="จัดการ Case">Case Management</button>
+                <button onclick="switchAdminTab('questions')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="questions" data-en="Question Settings" data-th="ตั้งค่าคำถาม"><i class="fa-solid fa-clipboard-list"></i> Question Settings</button>
                 <button onclick="switchAdminTab('agents')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="agents" data-en="Agent Management" data-th="จัดการ Agent">Agent Management</button>
                 <button onclick="switchAdminTab('staff')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="staff" data-en="Staff Management" data-th="จัดการ Staff">Staff Management</button>
-                <button onclick="switchAdminTab('export')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="export" data-en="Export Answers" data-th="ส่งออกข้อมูลการสืบสวน"><i class="fa-solid fa-file-export"></i> Export Answers</button>
+                <button onclick="switchAdminTab('export')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="export" data-en="Export Answers" data-th="ส่งออกข้อมูล"><i class="fa-solid fa-file-export"></i> Export Answers</button>
             </div>
 
             <!-- Admin Cases Tab -->
@@ -186,6 +187,38 @@
                     </table>
                 </div>
                 <div id="pagination-cases" class="flex justify-end gap-2 mt-4"></div>
+            </div>
+
+            <!-- Admin Questions Tab -->
+            <div id="tab-questions" class="admin-content hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <h2 class="text-xl csi-font text-white whitespace-nowrap" data-en="Questions" data-th="ตั้งค่าคำถาม">Questions</h2>
+                        <select id="filter-q-category" class="csi-input w-full sm:w-auto p-2 rounded text-sm" onchange="renderQuestionsTable()">
+                            <option value="Security Breach">Security Breach</option>
+                            <option value="Solve the Theft">Solve the Theft</option>
+                            <option value="Loss Prevention">Loss Prevention</option>
+                            <option value="Security Service Excellence">Security Service Excellence</option>
+                        </select>
+                    </div>
+                    <div class="space-x-2 whitespace-nowrap">
+                        <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
+                        <button onclick="openQuestionModal()" class="csi-btn px-4 py-2 rounded bg-purple-900/30 border-purple-400 text-purple-300 hover:bg-purple-900/50" data-en="+ Add Question" data-th="+ เพิ่มคำถาม">+ Add Question</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-800 text-cyan-400 csi-font">
+                            <tr>
+                                <th class="p-3 w-16">No.</th>
+                                <th class="p-3" data-en="Topic" data-th="หัวข้อ">Topic</th>
+                                <th class="p-3 w-32" data-en="Type" data-th="ประเภท">Type</th>
+                                <th class="p-3 w-24 text-right" data-en="Actions" data-th="ดำเนินการ">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-questions"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Admin Agents Tab -->
@@ -316,9 +349,8 @@
 
     </main>
 
-    <!-- MODALS (Case, Assign, Question, Agent, Staff) -->
-    <!-- (Modal code remains the same as before, keeping them collapsed for brevity but ensuring they exist) -->
-    
+    <!-- MODALS -->
+
     <!-- Modal: Case -->
     <div id="modal-case" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
         <div class="csi-border bg-gray-900 rounded-lg w-full max-w-md p-6">
@@ -377,13 +409,24 @@
         </div>
     </div>
 
-    <!-- Modal: Add Question -->
-    <div id="modal-question" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl text-cyan-400 mb-4 csi-font" data-en="Add Question" data-th="เพิ่มคำถาม">Add Question</h3>
+    <!-- Modal: Add / Edit Question -->
+    <div id="modal-question" class="modal-overlay fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto relative">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" data-en="Question Form" data-th="ฟอร์มคำถาม">Question Form</h3>
             <form id="form-question" onsubmit="saveQuestion(event)" class="space-y-4">
-                <input type="hidden" id="q-case-id">
+                <input type="hidden" id="q-id">
                 
+                <!-- Category Select (แทนที่ Case ID เดิม) -->
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Category" data-th="หมวดหมู่">Category</label>
+                    <select id="q-category" class="csi-input w-full p-2 rounded text-sm border-cyan-400" required onchange="updateParentQuestionList()">
+                        <option value="Security Breach">Security Breach</option>
+                        <option value="Solve the Theft">Solve the Theft</option>
+                        <option value="Loss Prevention">Loss Prevention</option>
+                        <option value="Security Service Excellence">Security Service Excellence</option>
+                    </select>
+                </div>
+
                 <div class="flex gap-4 items-center">
                     <label class="text-sm text-gray-300" data-en="Is Main Question?" data-th="เป็นคำถามหลักใช่หรือไม่?">Is Main Question?</label>
                     <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q_is_main" value="Yes" checked onchange="toggleSubQ(true)"> Yes</label>
@@ -495,7 +538,7 @@
         // --- STATE MANAGEMENT ---
         let state = {
             lang: 'th',
-            user: null, // { id, name, role: 'admin'|'agent', team }
+            user: null, 
             data: {
                 cases: [],
                 agents: [],
@@ -517,14 +560,11 @@
 
         function applyLanguage() {
             document.querySelectorAll('[data-en][data-th]').forEach(el => {
-                if(el.tagName === 'OPTION' || el.tagName === 'SPAN' || el.tagName === 'H2' || el.tagName === 'LABEL' || el.tagName === 'P' || el.tagName === 'BUTTON' || el.tagName === 'TH') {
-                    // if it has child elements (like icons), we only want to change the text node, or just use innerHTML carefully
-                    // for safety, if we have icons, we specified data attributes on inner spans usually.
+                if(el.tagName === 'OPTION' || el.tagName === 'SPAN' || el.tagName === 'H2' || el.tagName === 'LABEL' || el.tagName === 'P' || el.tagName === 'BUTTON' || el.tagName === 'TH' || el.tagName === 'H3') {
                     if(el.children.length === 0) el.innerText = el.getAttribute(`data-${state.lang}`);
                     else if(el.querySelector('span[data-en]')) {
-                        // handled by recursive call
+                        // Handled recursively
                     } else {
-                         // if it contains icon and text without span
                          let iconHtml = '';
                          Array.from(el.children).forEach(child => { if(child.tagName === 'I') iconHtml += child.outerHTML + ' '; });
                          el.innerHTML = iconHtml + el.getAttribute(`data-${state.lang}`);
@@ -564,7 +604,7 @@
 
         // --- CSV UTILITIES ---
         function downloadCSV(csvContent, filename) {
-            const bom = "\uFEFF"; // Byte Order Mark for UTF-8 (Excel Thai support)
+            const bom = "\uFEFF"; 
             const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             if (link.download !== undefined) {
@@ -578,14 +618,13 @@
             }
         }
 
-        // Simple CSV Line Parser that handles quotes
         function parseCSVLine(text) {
             let ret = [];
             let inQuotes = false;
             let val = '';
             for (let i = 0; i < text.length; i++) {
                 let char = text[i];
-                if (char === '"' && text[i+1] === '"') { val += '"'; i++; } // escaped quote
+                if (char === '"' && text[i+1] === '"') { val += '"'; i++; } 
                 else if (char === '"') { inQuotes = !inQuotes; }
                 else if (char === ',' && !inQuotes) { ret.push(val); val = ''; }
                 else { val += char; }
@@ -621,7 +660,6 @@
                 if(rows.length <= 1) return showError(t('CSV is empty or missing data', 'ไฟล์ CSV ว่างเปล่าหรือไม่มีข้อมูล'));
 
                 let parsedData = [];
-                // Skip header row[0]
                 for(let i=1; i<rows.length; i++) {
                     let values = parseCSVLine(rows[i]);
                     let obj = {};
@@ -653,9 +691,9 @@
                         showError(t('Import failed. Make sure backend is updated.', 'การนำเข้าล้มเหลว กรุณาตรวจสอบโค้ด Backend'));
                     }
                 }
-                event.target.value = ''; // Reset file input
+                event.target.value = ''; 
             };
-            reader.readAsText(file, "UTF-8"); // Ensure reading as UTF-8
+            reader.readAsText(file, "UTF-8"); 
         }
 
         // --- EXPORT ANSWERS LOGIC ---
@@ -665,7 +703,6 @@
             state.data.cases.forEach(c => {
                 caseSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
             });
-            // Update UI translations inside select if needed
             applyLanguage();
         }
 
@@ -791,7 +828,7 @@
             if(state.user.role === 'admin') {
                 showView('view-admin');
                 renderData();
-                renderExportTab(); // Initialize export tab data
+                renderExportTab();
             } else {
                 showView('view-agent');
                 renderAgentCases();
@@ -830,18 +867,36 @@
                 btn.classList.remove('text-gray-500');
             }
             state.pagination[tab] = 1;
+            
             if(tab === 'export') renderExportTab();
+            else if(tab === 'questions') renderQuestionsTable();
             else renderData();
         }
 
         function renderData() {
-            // Only render tables if we are not on the export tab to save resources
             const activeTab = document.querySelector('.admin-tab.text-cyan-400')?.getAttribute('data-target');
             if(activeTab === 'export') return;
+            if(activeTab === 'questions') { renderQuestionsTable(); return; }
 
             renderTable('cases', state.data.cases, 'table-cases', ['id', 'category', 'name', 'teams', 'status', 'actions']);
             renderTable('agents', state.data.agents, 'table-agents', ['id', 'name', 'team', 'actions']);
             renderTable('staff', state.data.staff, 'table-staff', ['id', 'name', 'actions']);
+        }
+
+        function renderPagination(type, totalItems) {
+            const container = document.getElementById(`pagination-${type}`);
+            if(!container) return;
+            container.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+            if(totalPages <= 1) return;
+
+            for(let i=1; i<=totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1 text-sm border ${state.pagination[type] === i ? 'bg-cyan-900 border-cyan-400 text-white' : 'border-gray-700 text-gray-400 hover:border-cyan-400'} rounded`;
+                btn.innerText = i;
+                btn.onclick = () => { state.pagination[type] = i; renderData(); };
+                container.appendChild(btn);
+            }
         }
 
         function renderTable(type, dataList, containerId, columns) {
@@ -880,7 +935,6 @@
                     else if(col === 'actions') {
                         html += `<td class="p-3 text-right space-x-1 whitespace-nowrap">`;
                         if(type === 'cases') {
-                            html += `<button onclick="openQuestionModal('${item.id}')" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-1 rounded hover:bg-purple-800" title="Add Question"><i class="fa-solid fa-clipboard-question"></i></button>`;
                             html += `<button onclick="openAssignModal('${item.id}')" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded hover:bg-blue-800" title="Assign Team"><i class="fa-solid fa-users-gear"></i></button>`;
                         }
                         html += `<button onclick="editItem('${type}', '${item.id}')" class="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded hover:bg-cyan-800" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
@@ -895,29 +949,176 @@
             renderPagination(type, dataList.length);
         }
 
-        function renderPagination(type, totalItems) {
-            const container = document.getElementById(`pagination-${type}`);
-            if(!container) return;
-            container.innerHTML = '';
-            const totalPages = Math.ceil(totalItems / state.itemsPerPage);
-            if(totalPages <= 1) return;
+        // --- MANAGE QUESTIONS (TAB VERSION) ---
+        function renderQuestionsTable() {
+            const category = document.getElementById('filter-q-category').value;
+            const tbody = document.getElementById('table-questions');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            // Note: We map Category to the caseId property to keep backend compatible
+            const qs = state.data.questions.filter(q => q.caseId === category);
 
-            for(let i=1; i<=totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.className = `px-3 py-1 text-sm border ${state.pagination[type] === i ? 'bg-cyan-900 border-cyan-400 text-white' : 'border-gray-700 text-gray-400 hover:border-cyan-400'} rounded`;
-                btn.innerText = i;
-                btn.onclick = () => { state.pagination[type] = i; renderData(); };
-                container.appendChild(btn);
+            if(qs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">${t('No questions found in this category', 'ไม่พบคำถามในหมวดหมู่นี้')}</td></tr>`;
+                return;
+            }
+
+            // จัดเรียงคำถามหลักและคำถามย่อยให้อยู่ติดกัน
+            let sortedQs = [];
+            const mainQs = qs.filter(q => q.isMain === 'Yes');
+            mainQs.forEach(mq => {
+                sortedQs.push(mq);
+                const subQs = qs.filter(q => q.parentId === mq.id);
+                sortedQs.push(...subQs);
+            });
+
+            sortedQs.forEach((q, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-800 hover:bg-gray-800/50";
+                
+                let topicText = q.mainTopic;
+                if (q.isMain !== 'Yes') {
+                    topicText = `<span class="text-gray-500 ml-4"><i class="fa-solid fa-level-up-alt fa-rotate-90"></i> ${q.mainTopic}</span>`;
+                }
+
+                let typeText = q.type === 'table' ? t('Table', 'ตาราง') : t('List', 'รายการ');
+
+                tr.innerHTML = `
+                    <td class="p-3 text-cyan-600">${idx + 1}</td>
+                    <td class="p-3">${topicText}</td>
+                    <td class="p-3 text-xs text-cyan-500">${typeText}</td>
+                    <td class="p-3 text-right space-x-1 whitespace-nowrap">
+                        <button onclick="openQuestionModal('${q.id}')" class="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded hover:bg-cyan-800" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteItem('questions', '${q.id}')" class="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded hover:bg-red-800" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateParentQuestionList(selectedParentId = '') {
+            const category = document.getElementById('q-category').value;
+            const qId = document.getElementById('q-id').value;
+            
+            // Get all main questions in this category, excluding the current editing question
+            const parents = state.data.questions.filter(q => q.caseId === category && q.isMain === 'Yes' && q.id !== qId);
+            const sel = document.getElementById('q-parent-id');
+            sel.innerHTML = parents.map(p => `<option value="${p.id}">${p.mainTopic}</option>`).join('');
+            
+            if(selectedParentId && parents.find(p => p.id === selectedParentId)) {
+                sel.value = selectedParentId;
             }
         }
 
-        // --- ADMIN CRUD LOGIC ---
+        function openQuestionModal(qId = null) {
+            document.getElementById('form-question').reset();
+            document.getElementById('q-id').value = qId || ''; 
+            
+            let category = document.getElementById('filter-q-category').value; 
+
+            if (qId) {
+                // Edit Mode
+                const q = state.data.questions.find(x => x.id === qId);
+                if (q) {
+                    category = q.caseId; // We map category to caseId property
+                    document.getElementById('q-category').value = category;
+                    
+                    updateParentQuestionList(q.parentId);
+                    
+                    document.querySelector(`input[name="q_is_main"][value="${q.isMain}"]`).checked = true;
+                    toggleSubQ(q.isMain === 'Yes');
+                    
+                    document.getElementById('q-main-topic').value = q.mainTopic;
+                    document.getElementById('q-sub-topic').value = q.subTopic || '';
+                    document.getElementById('q-type').value = q.type;
+                    toggleQTypeSetup();
+                    
+                    if (q.type === 'table') {
+                        document.getElementById('q-table-cols').value = q.tableCols || '';
+                        document.getElementById('q-table-rows').value = q.tableRows || '';
+                    }
+                }
+            } else {
+                // Add Mode
+                document.getElementById('q-category').value = category;
+                updateParentQuestionList();
+                
+                const sel = document.getElementById('q-parent-id');
+                if(sel.options.length === 0) {
+                    document.querySelector('input[name="q_is_main"][value="Yes"]').checked = true;
+                    toggleSubQ(true);
+                } else {
+                    toggleSubQ(document.querySelector('input[name="q_is_main"]:checked').value === 'Yes');
+                }
+                toggleQTypeSetup();
+            }
+
+            openModal('modal-question');
+        }
+
+        function toggleSubQ(isMain) {
+            const c = document.getElementById('q-parent-container');
+            if(isMain) {
+                c.classList.add('hidden');
+                document.getElementById('q-parent-id').removeAttribute('required');
+            } else {
+                c.classList.remove('hidden');
+                document.getElementById('q-parent-id').setAttribute('required', 'true');
+            }
+        }
+
+        function toggleQTypeSetup() {
+            const type = document.getElementById('q-type').value;
+            const setup = document.getElementById('q-table-setup');
+            if(type === 'table') {
+                setup.classList.remove('hidden');
+                document.getElementById('q-table-cols').setAttribute('required', 'true');
+                document.getElementById('q-table-rows').setAttribute('required', 'true');
+            } else {
+                setup.classList.add('hidden');
+                document.getElementById('q-table-cols').removeAttribute('required');
+                document.getElementById('q-table-rows').removeAttribute('required');
+            }
+        }
+
+        async function saveQuestion(e) {
+            e.preventDefault();
+            const qId = document.getElementById('q-id').value || generateId();
+            const category = document.getElementById('q-category').value;
+            
+            const data = {
+                id: qId,
+                caseId: category, // MAGIC HERE: We save the "Category" into the "caseId" column to avoid breaking backend!
+                isMain: document.querySelector('input[name="q_is_main"]:checked').value,
+                parentId: document.getElementById('q-parent-id').value || '',
+                mainTopic: document.getElementById('q-main-topic').value,
+                subTopic: document.getElementById('q-sub-topic').value,
+                type: document.getElementById('q-type').value,
+                tableCols: document.getElementById('q-table-cols').value || '',
+                tableRows: document.getElementById('q-table-rows').value || ''
+            };
+            
+            showLoading();
+            try {
+                await apiCall('saveData', { type: 'questions', data });
+                await fetchData(); 
+                closeModal('modal-question');
+                renderQuestionsTable(); // Refresh the questions table
+                showSuccess(t('Saved successfully', 'บันทึกสำเร็จ'));
+            } catch(err) {}
+        }
+
+
+        // --- GENERAL CRUD LOGIC ---
         async function saveData(type, data, actionName) {
             showLoading();
             try {
                 await apiCall(actionName, { type, data });
                 await fetchData(); 
-                closeModal(`modal-${type === 'cases' ? 'case' : type.replace(/s$/,'')}`);
+                if(type !== 'questions') {
+                    closeModal(`modal-${type === 'cases' ? 'case' : type.replace(/s$/,'')}`);
+                }
                 showSuccess(t('Saved successfully', 'บันทึกสำเร็จ'));
             } catch(e) {}
         }
@@ -964,11 +1165,14 @@
                     await apiCall('deleteData', { type, id });
                     await fetchData();
                     showSuccess(t('Deleted', 'ลบเรียบร้อย'));
+                    
+                    if (type === 'questions') {
+                        renderQuestionsTable();
+                    }
                 } catch(e){}
             }
         }
 
-        // Form Submit Handlers
         function saveCase(e) {
             e.preventDefault();
             const data = {
@@ -1002,7 +1206,6 @@
             saveData('staff', data, 'saveData');
         }
 
-        // Assign Logic
         function openAssignModal(caseId) {
             document.getElementById('assign-case-id').value = caseId;
             const c = state.data.cases.find(x => x.id === caseId);
@@ -1035,65 +1238,6 @@
                 closeModal('modal-assign');
                 showSuccess(t('Assigned', 'มอบหมายทีมสำเร็จ'));
             } catch(e){}
-        }
-
-        // Question Logic
-        function openQuestionModal(caseId) {
-            document.getElementById('form-question').reset();
-            document.getElementById('q-case-id').value = caseId;
-            toggleSubQ(true);
-            toggleQTypeSetup();
-            
-            const parents = state.data.questions.filter(q => q.caseId === caseId && q.isMain === 'Yes');
-            const sel = document.getElementById('q-parent-id');
-            sel.innerHTML = parents.map(p => `<option value="${p.id}">${p.mainTopic}</option>`).join('');
-            
-            if(parents.length === 0) {
-                document.querySelector('input[name="q_is_main"][value="Yes"]').checked = true;
-                toggleSubQ(true);
-            }
-            openModal('modal-question');
-        }
-
-        function toggleSubQ(isMain) {
-            const c = document.getElementById('q-parent-container');
-            if(isMain) {
-                c.classList.add('hidden');
-                document.getElementById('q-parent-id').removeAttribute('required');
-            } else {
-                c.classList.remove('hidden');
-                document.getElementById('q-parent-id').setAttribute('required', 'true');
-            }
-        }
-
-        function toggleQTypeSetup() {
-            const type = document.getElementById('q-type').value;
-            const setup = document.getElementById('q-table-setup');
-            if(type === 'table') {
-                setup.classList.remove('hidden');
-                document.getElementById('q-table-cols').setAttribute('required', 'true');
-                document.getElementById('q-table-rows').setAttribute('required', 'true');
-            } else {
-                setup.classList.add('hidden');
-                document.getElementById('q-table-cols').removeAttribute('required');
-                document.getElementById('q-table-rows').removeAttribute('required');
-            }
-        }
-
-        function saveQuestion(e) {
-            e.preventDefault();
-            const data = {
-                id: generateId(),
-                caseId: document.getElementById('q-case-id').value,
-                isMain: document.querySelector('input[name="q_is_main"]:checked').value,
-                parentId: document.getElementById('q-parent-id').value || '',
-                mainTopic: document.getElementById('q-main-topic').value,
-                subTopic: document.getElementById('q-sub-topic').value,
-                type: document.getElementById('q-type').value,
-                tableCols: document.getElementById('q-table-cols').value || '',
-                tableRows: document.getElementById('q-table-rows').value || ''
-            };
-            saveData('questions', data, 'saveData');
         }
 
         // --- AGENT: WORKSPACE LOGIC ---
@@ -1147,11 +1291,17 @@
             const container = document.getElementById('ws-questions-container');
             container.innerHTML = '';
             
-            const caseId = state.currentCase.id;
+            const category = state.currentCase.category;
             const team = state.user.team;
             
-            const qs = state.data.questions.filter(q => q.caseId === caseId);
+            // MAGIC: We pull questions that match the CATEGORY of the case, instead of the caseId!
+            const qs = state.data.questions.filter(q => q.caseId === category);
             const mainQs = qs.filter(q => q.isMain === 'Yes');
+
+            if(mainQs.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-gray-500 border border-dashed border-gray-700 rounded-lg">ไม่พบชุดคำถามสำหรับหมวดหมู่ "${category}"</div>`;
+                return;
+            }
 
             mainQs.forEach((mq, index) => {
                 const block = document.createElement('div');
@@ -1185,7 +1335,7 @@
         }
 
         function renderAnswerUI(q, team) {
-            const caseId = state.currentCase.id;
+            const caseId = state.currentCase.id; // Answers still belong to the specific case instance!
             const ansList = state.data.answers.filter(a => a.caseId === caseId && a.questionId === q.id && a.team === team);
 
             let html = `<div class="mt-2" id="ans-container-${q.id}">`;
