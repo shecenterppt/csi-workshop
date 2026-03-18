@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSI: Corporation Security Investigation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Kanit:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --csi-neon: #0ff;
+            --csi-dark: #0a0a0f;
+            --csi-panel: #111827;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--csi-dark);
+            color: #e2e8f0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .csi-font { font-family: 'Share Tech Mono', monospace; }
+        
+        .csi-border {
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+        }
+
+        .csi-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            color: #0ff;
+            transition: all 0.3s ease;
+        }
+        .csi-input:focus {
+            outline: none;
+            border-color: #0ff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        }
+
+        .csi-btn {
+            background: transparent;
+            border: 1px solid #0ff;
+            color: #0ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .csi-btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+        .csi-btn-danger {
+            border-color: #f43f5e;
+            color: #f43f5e;
+        }
+        .csi-btn-danger:hover {
+            background: rgba(244, 63, 94, 0.2);
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+        }
+        .csi-btn-success {
+            border-color: #10b981;
+            color: #10b981;
+        }
+        .csi-btn-success:hover {
+            background: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 9999;
+            position: absolute;
+            pointer-events: none;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,255,255,0.1) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            animation: scanline 8s linear infinite;
+        }
+        @keyframes scanline {
+            0% { top: -100px; }
+            100% { top: 100%; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--csi-dark); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 255, 0.6); }
+
+        .modal-overlay { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+    <div class="scanline"></div>
+
+    <!-- Header / Navbar -->
+    <header id="navbar" class="hidden p-4 border-b border-cyan-900 bg-gray-900/80 sticky top-0 z-40 backdrop-blur">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-fingerprint text-cyan-400 text-3xl"></i>
+                <div class="leading-tight">
+                    <h1 class="csi-font text-xl text-cyan-400 font-bold tracking-widest">CSI</h1>
+                    <span class="text-xs text-gray-400">CORP. SECURITY INVESTIGATION</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <div id="user-info-name" class="text-sm font-bold text-gray-200"></div>
+                    <div id="user-info-role" class="text-xs text-cyan-500 csi-font"></div>
+                </div>
+                <button onclick="toggleLanguage()" class="csi-btn px-3 py-1 rounded text-sm"><i class="fa-solid fa-globe"></i> <span id="lang-text">TH</span></button>
+                <button onclick="logout()" class="csi-btn csi-btn-danger px-3 py-1 rounded text-sm"><i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto p-4 relative z-10" id="app-container">
+        
+        <!-- Login View -->
+        <div id="view-login" class="min-h-[80vh] flex items-center justify-center">
+            <div class="csi-border bg-gray-900/90 p-8 rounded-lg w-full max-w-md text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-cyan-500/5 blur-xl"></div>
+                <i class="fa-solid fa-user-secret text-6xl text-cyan-500 mb-6 relative z-10"></i>
+                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Security workshop">ACCESS TERMINAL</h2>
+                <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="Enter Agent ID or Staff ID">Enter Agent ID or Staff ID</p>
+                
+                <form onsubmit="handleLogin(event)" class="relative z-10 space-y-4">
+                    <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., 00000)" required autocomplete="off">
+                    <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="ACCESS SYSTEM">INITIALIZE</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard View -->
+        <div id="view-admin" class="hidden space-y-6">
+            <div class="flex flex-wrap gap-4 border-b border-gray-700 pb-2 overflow-x-auto">
+                <button onclick="switchAdminTab('cases')" class="admin-tab text-cyan-400 border-b-2 border-cyan-400 px-4 py-2 font-bold transition-all whitespace-nowrap" data-target="cases" data-en="Case Management" data-th="จัดการ Case">Case Management</button>
+                <button onclick="switchAdminTab('agents')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="agents" data-en="Agent Management" data-th="จัดการ Agent">Agent Management</button>
+                <button onclick="switchAdminTab('staff')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="staff" data-en="Staff Management" data-th="จัดการ Staff">Staff Management</button>
+                <button onclick="switchAdminTab('export')" class="admin-tab text-gray-500 hover:text-cyan-200 px-4 py-2 transition-all whitespace-nowrap" data-target="export" data-en="Export Answers" data-th="ส่งออกข้อมูลการสืบสวน"><i class="fa-solid fa-file-export"></i> Export Answers</button>
+            </div>
+
+            <!-- Admin Cases Tab -->
+            <div id="tab-cases" class="admin-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl csi-font text-white" data-en="Case Files" data-th="แฟ้มคดี (Case)">Case Files</h2>
+                    <div class="space-x-2">
+                        <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
+                        <button onclick="openModal('modal-case')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Case" data-th="+ เพิ่ม Case">+ New Case</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-800 text-cyan-400 csi-font">
+                            <tr>
+                                <th class="p-3">No.</th>
+                                <th class="p-3" data-en="Category" data-th="หมวดหมู่">Category</th>
+                                <th class="p-3" data-en="Case Name" data-th="ชื่อ Case">Case Name</th>
+                                <th class="p-3" data-en="Teams" data-th="ทีมที่รับผิดชอบ">Teams</th>
+                                <th class="p-3" data-en="Status" data-th="สถานะ">Status</th>
+                                <th class="p-3 text-right" data-en="Actions" data-th="การดำเนินการ">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-cases"></tbody>
+                    </table>
+                </div>
+                <div id="pagination-cases" class="flex justify-end gap-2 mt-4"></div>
+            </div>
+
+            <!-- Admin Agents Tab -->
+            <div id="tab-agents" class="admin-content hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <h2 class="text-xl csi-font text-white" data-en="Field Agents" data-th="รายชื่อ Agent">Field Agents</h2>
+                    <div class="space-x-2 flex flex-wrap gap-y-2">
+                        <input type="file" id="import-agents-file" accept=".csv" class="hidden" onchange="handleImportCSV(event, 'agents')">
+                        <button onclick="document.getElementById('import-agents-file').click()" class="csi-btn csi-btn-success px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-import"></i> <span data-en="Import CSV" data-th="นำเข้า CSV">Import CSV</span></button>
+                        <button onclick="exportCSV('agents')" class="csi-btn px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-csv"></i> <span data-en="Export CSV" data-th="ส่งออก CSV">Export CSV</span></button>
+                        <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
+                        <button onclick="openModal('modal-agent')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Agent" data-th="+ เพิ่ม Agent">+ New Agent</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-800 text-cyan-400 csi-font">
+                            <tr>
+                                <th class="p-3">Agent ID</th>
+                                <th class="p-3" data-en="Name" data-th="ชื่อ-สกุล">Name</th>
+                                <th class="p-3">Team</th>
+                                <th class="p-3 text-right" data-en="Actions" data-th="การดำเนินการ">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-agents"></tbody>
+                    </table>
+                </div>
+                <div id="pagination-agents" class="flex justify-end gap-2 mt-4"></div>
+            </div>
+
+            <!-- Admin Staff Tab -->
+            <div id="tab-staff" class="admin-content hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <h2 class="text-xl csi-font text-white" data-en="HQ Staff" data-th="รายชื่อ Staff">HQ Staff</h2>
+                    <div class="space-x-2 flex flex-wrap gap-y-2">
+                        <input type="file" id="import-staff-file" accept=".csv" class="hidden" onchange="handleImportCSV(event, 'staff')">
+                        <button onclick="document.getElementById('import-staff-file').click()" class="csi-btn csi-btn-success px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-import"></i> <span data-en="Import CSV" data-th="นำเข้า CSV">Import CSV</span></button>
+                        <button onclick="exportCSV('staff')" class="csi-btn px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-csv"></i> <span data-en="Export CSV" data-th="ส่งออก CSV">Export CSV</span></button>
+                        <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
+                        <button onclick="openModal('modal-staff')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Staff" data-th="+ เพิ่ม Staff">+ New Staff</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-800 text-cyan-400 csi-font">
+                            <tr>
+                                <th class="p-3">Staff ID</th>
+                                <th class="p-3" data-en="Name" data-th="ชื่อ-สกุล">Name</th>
+                                <th class="p-3 text-right" data-en="Actions" data-th="การดำเนินการ">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-staff"></tbody>
+                    </table>
+                </div>
+                <div id="pagination-staff" class="flex justify-end gap-2 mt-4"></div>
+            </div>
+
+            <!-- Admin Export Answers Tab -->
+            <div id="tab-export" class="admin-content hidden">
+                <div class="csi-border bg-gray-900 p-6 rounded-lg max-w-2xl mx-auto">
+                    <div class="text-center mb-6">
+                        <i class="fa-solid fa-file-export text-4xl text-cyan-500 mb-3"></i>
+                        <h2 class="text-2xl csi-font text-white" data-en="Export Investigation Data" data-th="ส่งออกข้อมูลการสืบสวน">Export Investigation Data</h2>
+                        <p class="text-gray-400 text-sm mt-1" data-en="Download team answers as CSV file" data-th="ดาวน์โหลดคำตอบของแต่ละทีมในรูปแบบไฟล์ CSV">Download team answers as CSV file</p>
+                    </div>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm text-cyan-300 mb-2 font-bold" data-en="Filter by Case" data-th="เลือกคดีที่ต้องการส่งออก">Filter by Case</label>
+                            <select id="export-case" class="csi-input w-full p-3 rounded text-md"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-cyan-300 mb-2 font-bold" data-en="Filter by Team" data-th="เลือกทีม">Filter by Team</label>
+                            <select id="export-team" class="csi-input w-full p-3 rounded text-md">
+                                <option value="ALL" data-en="All Teams" data-th="ทุกทีม">All Teams</option>
+                                <option value="Alpha">Alpha</option>
+                                <option value="Bravo">Bravo</option>
+                                <option value="Delta">Delta</option>
+                                <option value="Sigma">Sigma</option>
+                            </select>
+                        </div>
+                        
+                        <div class="pt-4 border-t border-gray-700 text-center">
+                            <button onclick="exportAnswersCSV()" class="csi-btn bg-cyan-900/40 px-8 py-3 rounded-lg font-bold text-lg w-full sm:w-auto shadow-lg hover:shadow-cyan-500/50">
+                                <i class="fa-solid fa-download mr-2"></i> <span data-en="DOWNLOAD CSV" data-th="ดาวน์โหลดไฟล์ CSV">DOWNLOAD CSV</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent View (Case List) -->
+        <div id="view-agent" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl csi-font text-cyan-400" data-en="Active Investigations" data-th="ภารกิจสืบสวน">Active Investigations</h2>
+                    <p class="text-gray-400 text-sm" data-en="Select a case to begin" data-th="เลือกคดีเพื่อเริ่มการสืบสวน">Select a case to begin</p>
+                </div>
+                <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i> <span data-en="Refresh" data-th="รีเฟรช">Refresh</span></button>
+            </div>
+            <div id="agent-case-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cases will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Workspace View (Solving a Case) -->
+        <div id="view-workspace" class="hidden space-y-6">
+            <button onclick="showView('view-agent')" class="text-cyan-400 hover:text-cyan-200 transition"><i class="fa-solid fa-arrow-left"></i> <span data-en="Back to Cases" data-th="กลับไปหน้ารายการ">Back</span></button>
+            
+            <div class="csi-border bg-gray-900 p-6 rounded relative">
+                <div class="absolute top-0 right-0 bg-cyan-900/50 text-cyan-200 px-3 py-1 rounded-bl text-xs csi-font" id="ws-case-status">Status</div>
+                <h2 id="ws-case-title" class="text-2xl font-bold text-white mb-2">Case Title</h2>
+                <div class="flex gap-4 text-sm text-gray-400">
+                    <span id="ws-case-category"><i class="fa-solid fa-folder"></i> Category</span>
+                    <span id="ws-case-team"><i class="fa-solid fa-users"></i> Team</span>
+                </div>
+            </div>
+
+            <div id="ws-questions-container" class="space-y-6">
+                <!-- Questions & Answers will be rendered here -->
+            </div>
+
+            <div class="flex justify-end gap-4 border-t border-gray-700 pt-4 pb-10">
+                <button onclick="submitCase()" class="csi-btn bg-cyan-900/20 px-8 py-3 rounded font-bold" data-en="SUBMIT CASE" data-th="ส่งรายงานคดี">SUBMIT CASE</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODALS (Case, Assign, Question, Agent, Staff) -->
+    <!-- (Modal code remains the same as before, keeping them collapsed for brevity but ensuring they exist) -->
+    
+    <!-- Modal: Case -->
+    <div id="modal-case" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-md p-6">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" id="modal-case-title" data-en="Case Details" data-th="ข้อมูล Case">Case Details</h3>
+            <form id="form-case" onsubmit="saveCase(event)" class="space-y-4">
+                <input type="hidden" id="case-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Category" data-th="หมวดหมู่">Category</label>
+                    <select id="case-category" class="csi-input w-full p-2 rounded text-sm" required>
+                        <option value="Security Breach">Security Breach</option>
+                        <option value="Solve the Theft">Solve the Theft</option>
+                        <option value="Loss Prevention">Loss Prevention</option>
+                        <option value="Security Service Excellence">Security Service Excellence</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Case Name" data-th="ชื่อ Case">Case Name</label>
+                    <input type="text" id="case-name" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Status" data-th="สถานะ">Status</label>
+                    <select id="case-status" class="csi-input w-full p-2 rounded text-sm">
+                        <option value="Active">Active (เปิดเคส)</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modal-case')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm" data-en="Cancel" data-th="ยกเลิก">Cancel</button>
+                    <button type="submit" class="csi-btn px-4 py-2 rounded text-sm" data-en="Save" data-th="บันทึก">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Assign Team -->
+    <div id="modal-assign" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-sm p-6">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" data-en="Assign Team" data-th="มอบหมายทีม">Assign Team</h3>
+            <form id="form-assign" onsubmit="saveAssign(event)" class="space-y-4">
+                <input type="hidden" id="assign-case-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2" data-en="Select Team" data-th="เลือกทีม">Select Team</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Alpha" class="team-cb"> Alpha</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Bravo" class="team-cb"> Bravo</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Delta" class="team-cb"> Delta</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Sigma" class="team-cb"> Sigma</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="All" onchange="toggleAllTeams(this)"> All Teams</label>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modal-assign')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm" data-en="Cancel" data-th="ยกเลิก">Cancel</button>
+                    <button type="submit" class="csi-btn px-4 py-2 rounded text-sm" data-en="Assign" data-th="มอบหมาย">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Question -->
+    <div id="modal-question" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" data-en="Add Question" data-th="เพิ่มคำถาม">Add Question</h3>
+            <form id="form-question" onsubmit="saveQuestion(event)" class="space-y-4">
+                <input type="hidden" id="q-case-id">
+                
+                <div class="flex gap-4 items-center">
+                    <label class="text-sm text-gray-300" data-en="Is Main Question?" data-th="เป็นคำถามหลักใช่หรือไม่?">Is Main Question?</label>
+                    <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q_is_main" value="Yes" checked onchange="toggleSubQ(true)"> Yes</label>
+                    <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="q_is_main" value="No" onchange="toggleSubQ(false)"> No</label>
+                </div>
+                
+                <div id="q-parent-container" class="hidden">
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Select Parent Question" data-th="เลือกหัวข้อคำถามหลัก">Select Parent Question</label>
+                    <select id="q-parent-id" class="csi-input w-full p-2 rounded text-sm"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Main Topic" data-th="หัวข้อหลัก">Main Topic</label>
+                    <input type="text" id="q-main-topic" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Sub Topic (Optional)" data-th="หัวข้อย่อย (ไม่ใส่ก็ได้)">Sub Topic (Optional)</label>
+                    <textarea id="q-sub-topic" class="csi-input w-full p-2 rounded text-sm rows-2"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Question Type" data-th="ประเภท">Question Type</label>
+                    <select id="q-type" class="csi-input w-full p-2 rounded text-sm" required onchange="toggleQTypeSetup()">
+                        <option value="multiple">เพิ่มคำตอบได้มากกว่า 1 คำตอบ (List)</option>
+                        <option value="table">ตาราง (Table Grid)</option>
+                    </select>
+                </div>
+
+                <!-- Table Setup UI -->
+                <div id="q-table-setup" class="hidden p-3 border border-cyan-800 rounded bg-black/30 space-y-3">
+                    <p class="text-xs text-cyan-400" data-en="Define table headers (comma separated)" data-th="ระบุหัวข้อ แถว และ คอลัมน์ (คั่นด้วยลูกน้ำ ,)">Define table headers (comma separated)</p>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1" data-en="Columns (e.g. Correct, Prevent, Priority ranking)" data-th="คอลัมน์ (เช่น Correct, Prevent)">Columns</label>
+                        <input type="text" id="q-table-cols" class="csi-input w-full p-2 rounded text-sm" placeholder="Col1, Col2, Col3">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1" data-en="Rows (e.g. People, Process, Technology)" data-th="แถว (เช่น People, Process)">Rows</label>
+                        <input type="text" id="q-table-rows" class="csi-input w-full p-2 rounded text-sm" placeholder="Row1, Row2, Row3">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modal-question')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm" data-en="Cancel" data-th="ยกเลิก">Cancel</button>
+                    <button type="submit" class="csi-btn px-4 py-2 rounded text-sm" data-en="Save Question" data-th="บันทึกคำถาม">Save Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Agent -->
+    <div id="modal-agent" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-sm p-6">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" id="modal-agent-title">Agent Details</h3>
+            <form id="form-agent" onsubmit="saveAgent(event)" class="space-y-4">
+                <input type="hidden" id="agent-old-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Agent ID</label>
+                    <input type="text" id="agent-id" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Agent Name" data-th="ชื่อ-สกุล">Agent Name</label>
+                    <input type="text" id="agent-name" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Team</label>
+                    <select id="agent-team" class="csi-input w-full p-2 rounded text-sm" required>
+                        <option value="Alpha">Alpha</option>
+                        <option value="Bravo">Bravo</option>
+                        <option value="Delta">Delta</option>
+                        <option value="Sigma">Sigma</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modal-agent')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm">Cancel</button>
+                    <button type="submit" class="csi-btn px-4 py-2 rounded text-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Staff -->
+    <div id="modal-staff" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-sm p-6">
+            <h3 class="text-xl text-cyan-400 mb-4 csi-font" id="modal-staff-title">Staff Details</h3>
+            <form id="form-staff" onsubmit="saveStaff(event)" class="space-y-4">
+                <input type="hidden" id="staff-old-id">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Staff ID</label>
+                    <input type="text" id="staff-id" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1" data-en="Staff Name" data-th="ชื่อ-สกุล">Staff Name</label>
+                    <input type="text" id="staff-name" class="csi-input w-full p-2 rounded text-sm" required>
+                </div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modal-staff')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm">Cancel</button>
+                    <button type="submit" class="csi-btn px-4 py-2 rounded text-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONFIGURATION ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzGfn2KNvLyEwr_AaRKSp4LErLs8M55Njujnv6EKPxVbYvbTMeHoUggA-ZCVgBDW28X/exec"; 
+        
+        // --- STATE MANAGEMENT ---
+        let state = {
+            lang: 'th',
+            user: null, // { id, name, role: 'admin'|'agent', team }
+            data: {
+                cases: [],
+                agents: [],
+                staff: [],
+                questions: [],
+                answers: []
+            },
+            pagination: { cases: 1, agents: 1, staff: 1 },
+            itemsPerPage: 15,
+            currentCase: null
+        };
+
+        // --- LANGUAGE SYSTEM ---
+        function toggleLanguage() {
+            state.lang = state.lang === 'th' ? 'en' : 'th';
+            document.getElementById('lang-text').innerText = state.lang.toUpperCase();
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-en][data-th]').forEach(el => {
+                if(el.tagName === 'OPTION' || el.tagName === 'SPAN' || el.tagName === 'H2' || el.tagName === 'LABEL' || el.tagName === 'P' || el.tagName === 'BUTTON' || el.tagName === 'TH') {
+                    // if it has child elements (like icons), we only want to change the text node, or just use innerHTML carefully
+                    // for safety, if we have icons, we specified data attributes on inner spans usually.
+                    if(el.children.length === 0) el.innerText = el.getAttribute(`data-${state.lang}`);
+                    else if(el.querySelector('span[data-en]')) {
+                        // handled by recursive call
+                    } else {
+                         // if it contains icon and text without span
+                         let iconHtml = '';
+                         Array.from(el.children).forEach(child => { if(child.tagName === 'I') iconHtml += child.outerHTML + ' '; });
+                         el.innerHTML = iconHtml + el.getAttribute(`data-${state.lang}`);
+                    }
+                }
+            });
+            document.querySelectorAll('input[placeholder][data-en]').forEach(el => {
+                el.placeholder = el.getAttribute(`data-${state.lang}`);
+            });
+            if(state.user && state.user.role === 'admin') renderData(); 
+        }
+
+        function t(enText, thText) {
+            return state.lang === 'th' ? thText : enText;
+        }
+
+        // --- UTILS ---
+        function showView(viewId) {
+            ['view-login', 'view-admin', 'view-agent', 'view-workspace'].forEach(v => {
+                document.getElementById(v).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            if(viewId !== 'view-login') document.getElementById('navbar').classList.remove('hidden');
+            else document.getElementById('navbar').classList.add('hidden');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('form-'+id.split('-')[1])?.reset(); }
+
+        function showLoading(text = t('Processing...', 'กำลังประมวลผล...')) {
+            Swal.fire({ title: text, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }, background: '#111827', color: '#0ff' });
+        }
+
+        function showSuccess(text) { Swal.fire({ icon: 'success', title: text, timer: 1500, showConfirmButton: false, background: '#111827', color: '#0ff' }); }
+        function showError(text) { Swal.fire({ icon: 'error', title: text, background: '#111827', color: '#f43f5e' }); }
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+        // --- CSV UTILITIES ---
+        function downloadCSV(csvContent, filename) {
+            const bom = "\uFEFF"; // Byte Order Mark for UTF-8 (Excel Thai support)
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Simple CSV Line Parser that handles quotes
+        function parseCSVLine(text) {
+            let ret = [];
+            let inQuotes = false;
+            let val = '';
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                if (char === '"' && text[i+1] === '"') { val += '"'; i++; } // escaped quote
+                else if (char === '"') { inQuotes = !inQuotes; }
+                else if (char === ',' && !inQuotes) { ret.push(val); val = ''; }
+                else { val += char; }
+            }
+            ret.push(val);
+            return ret.map(v => v.trim());
+        }
+
+        function exportCSV(type) {
+            let data = state.data[type];
+            let headers = type === 'agents' ? ['ID', 'Name', 'Team'] : ['ID', 'Name'];
+            let csvRows = [headers.join(',')];
+
+            data.forEach(item => {
+                let row = headers.map(h => {
+                    let key = h.toLowerCase();
+                    let val = item[key] || '';
+                    return `"${String(val).replace(/"/g, '""')}"`;
+                });
+                csvRows.push(row.join(','));
+            });
+            downloadCSV(csvRows.join('\n'), `CSI_${type.toUpperCase()}_${new Date().toISOString().slice(0,10)}.csv`);
+        }
+
+        async function handleImportCSV(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
+                if(rows.length <= 1) return showError(t('CSV is empty or missing data', 'ไฟล์ CSV ว่างเปล่าหรือไม่มีข้อมูล'));
+
+                let parsedData = [];
+                // Skip header row[0]
+                for(let i=1; i<rows.length; i++) {
+                    let values = parseCSVLine(rows[i]);
+                    let obj = {};
+                    if(type === 'agents') {
+                        obj.id = values[0] || generateId();
+                        obj.name = values[1] || 'Unknown';
+                        obj.team = values[2] || 'Alpha';
+                    } else if (type === 'staff') {
+                        obj.id = values[0] || generateId();
+                        obj.name = values[1] || 'Unknown';
+                    }
+                    parsedData.push(obj);
+                }
+
+                const res = await Swal.fire({
+                    title: t('Confirm Import', 'ยืนยันการนำเข้าข้อมูล'),
+                    text: t(`Found ${parsedData.length} records. Proceed?`, `พบข้อมูล ${parsedData.length} รายการ ต้องการนำเข้าหรือไม่?`),
+                    icon: 'question', showCancelButton: true, confirmButtonText: t('Yes, Import', 'ใช่, นำเข้าเลย'),
+                    background: '#111827', color: '#fff'
+                });
+
+                if(res.isConfirmed) {
+                    showLoading();
+                    try {
+                        await apiCall('importBulkData', { type: type, data: parsedData });
+                        await fetchData();
+                        showSuccess(t('Import Successful', 'นำเข้าข้อมูลสำเร็จ'));
+                    } catch (err) {
+                        showError(t('Import failed. Make sure backend is updated.', 'การนำเข้าล้มเหลว กรุณาตรวจสอบโค้ด Backend'));
+                    }
+                }
+                event.target.value = ''; // Reset file input
+            };
+            reader.readAsText(file, "UTF-8"); // Ensure reading as UTF-8
+        }
+
+        // --- EXPORT ANSWERS LOGIC ---
+        function renderExportTab() {
+            const caseSel = document.getElementById('export-case');
+            caseSel.innerHTML = `<option value="ALL">${t('All Cases', 'ทุกคดี')}</option>`;
+            state.data.cases.forEach(c => {
+                caseSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+            // Update UI translations inside select if needed
+            applyLanguage();
+        }
+
+        function exportAnswersCSV() {
+            const caseId = document.getElementById('export-case').value;
+            const team = document.getElementById('export-team').value;
+
+            let filteredAnswers = state.data.answers;
+            if (caseId !== 'ALL') filteredAnswers = filteredAnswers.filter(a => a.caseId === caseId);
+            if (team !== 'ALL') filteredAnswers = filteredAnswers.filter(a => a.team === team);
+
+            if (filteredAnswers.length === 0) {
+                return showError(t('No data found for selected criteria', 'ไม่พบข้อมูลคำตอบตามเงื่อนไขที่เลือก'));
+            }
+
+            let headers = ['Case Name', 'Team', 'Question (Main)', 'Question (Sub)', 'Answer Format', 'Table Row', 'Table Col', 'User Answer'];
+            let csvRows = [headers.join(',')];
+
+            filteredAnswers.forEach(ans => {
+                const c = state.data.cases.find(x => x.id === ans.caseId) || { name: 'Unknown' };
+                const q = state.data.questions.find(x => x.id === ans.questionId) || { mainTopic: 'Unknown', subTopic: '' };
+                
+                let mainQText = q.mainTopic;
+                let subQText = q.subTopic || '';
+                
+                if(q.parentId) {
+                    const parent = state.data.questions.find(x => x.id === q.parentId);
+                    if(parent) {
+                        mainQText = parent.mainTopic;
+                        subQText = q.mainTopic + (q.subTopic ? ` (${q.subTopic})` : '');
+                    }
+                }
+
+                let rowName = '';
+                let colName = '';
+                if(ans.type === 'table') {
+                    const rows = q.tableRows ? q.tableRows.split(',').map(s=>s.trim()) : [];
+                    const cols = q.tableCols ? q.tableCols.split(',').map(s=>s.trim()) : [];
+                    rowName = rows[ans.rowIdx] !== undefined ? rows[ans.rowIdx] : `Row ${ans.rowIdx}`;
+                    colName = cols[ans.colIdx] !== undefined ? cols[ans.colIdx] : `Col ${ans.colIdx}`;
+                }
+
+                let rowData = [
+                    c.name,
+                    ans.team,
+                    mainQText,
+                    subQText,
+                    ans.type === 'table' ? 'Table' : 'List',
+                    rowName,
+                    colName,
+                    ans.value
+                ];
+
+                let csvRow = rowData.map(val => `"${String(val || '').replace(/"/g, '""')}"`);
+                csvRows.push(csvRow.join(','));
+            });
+
+            const fileName = `CSI_Answers_${caseId==='ALL'?'AllCases':caseId}_Team${team}_${new Date().toISOString().slice(0,10)}.csv`;
+            downloadCSV(csvRows.join('\n'), fileName);
+        }
+
+        // --- API ADAPTER ---
+        async function apiCall(action, payload = {}) {
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, ...payload })
+                });
+                const result = await response.json();
+                if(!result.success) throw new Error(result.message || 'API Error');
+                return result.data;
+            } catch (error) {
+                console.error("API Error:", error);
+                throw error;
+            }
+        }
+
+        // --- AUTH LOGIC ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('login-id').value.trim();
+            if(!id) return;
+
+            showLoading(t('Authenticating...', 'กำลังตรวจสอบตัวตน...'));
+
+            if (id === '00000') {
+                state.user = { id: '00000', name: 'Super Admin', role: 'admin' };
+                Swal.close();
+                finishLogin();
+                return;
+            }
+
+            try {
+                const data = await apiCall('getData');
+                state.data = data; 
+                
+                const staff = data.staff.find(s => s.id === id);
+                if(staff) {
+                    state.user = { id: staff.id, name: staff.name, role: 'admin' };
+                    Swal.close();
+                    finishLogin();
+                    return;
+                }
+
+                const agent = data.agents.find(a => a.id === id);
+                if(agent) {
+                    state.user = { id: agent.id, name: agent.name, team: agent.team, role: 'agent' };
+                    Swal.close();
+                    finishLogin();
+                    return;
+                }
+
+                showError(t('Access Denied. ID not found.', 'การเข้าถึงถูกปฏิเสธ ไม่พบรหัสนี้ในระบบ'));
+            } catch (err) {
+                showError(t('Database Connection Failed', 'การเชื่อมต่อฐานข้อมูลล้มเหลว'));
+            }
+        }
+
+        function finishLogin() {
+            document.getElementById('user-info-name').innerText = state.user.name;
+            document.getElementById('user-info-role').innerText = state.user.role === 'admin' ? 'HQ COMMAND' : `TEAM ${state.user.team}`;
+            
+            if(state.user.role === 'admin') {
+                showView('view-admin');
+                renderData();
+                renderExportTab(); // Initialize export tab data
+            } else {
+                showView('view-agent');
+                renderAgentCases();
+            }
+        }
+
+        function logout() {
+            state.user = null;
+            document.getElementById('login-id').value = '';
+            showView('view-login');
+        }
+
+        async function fetchData() {
+            showLoading(t('Syncing Database...', 'กำลังซิงค์ข้อมูล...'));
+            try {
+                state.data = await apiCall('getData');
+                Swal.close();
+                if(state.user.role === 'admin') { renderData(); renderExportTab(); }
+                else renderAgentCases();
+            } catch (err) {
+                showError(t('Database Connection Failed', 'การเชื่อมต่อฐานข้อมูลล้มเหลว'));
+            }
+        }
+
+        // --- ADMIN: RENDERING & LOGIC ---
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab').forEach(el => {
+                el.classList.remove('text-cyan-400', 'border-b-2', 'border-cyan-400');
+                el.classList.add('text-gray-500');
+            });
+            document.getElementById('tab-'+tab).classList.remove('hidden');
+            const btn = document.querySelector(`.admin-tab[data-target="${tab}"]`);
+            if(btn){
+                btn.classList.add('text-cyan-400', 'border-b-2', 'border-cyan-400');
+                btn.classList.remove('text-gray-500');
+            }
+            state.pagination[tab] = 1;
+            if(tab === 'export') renderExportTab();
+            else renderData();
+        }
+
+        function renderData() {
+            // Only render tables if we are not on the export tab to save resources
+            const activeTab = document.querySelector('.admin-tab.text-cyan-400')?.getAttribute('data-target');
+            if(activeTab === 'export') return;
+
+            renderTable('cases', state.data.cases, 'table-cases', ['id', 'category', 'name', 'teams', 'status', 'actions']);
+            renderTable('agents', state.data.agents, 'table-agents', ['id', 'name', 'team', 'actions']);
+            renderTable('staff', state.data.staff, 'table-staff', ['id', 'name', 'actions']);
+        }
+
+        function renderTable(type, dataList, containerId, columns) {
+            const tbody = document.getElementById(containerId);
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            const page = state.pagination[type] || 1;
+            const start = (page - 1) * state.itemsPerPage;
+            const end = start + state.itemsPerPage;
+            const pagedData = dataList.slice(start, end);
+
+            if(pagedData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}" class="p-4 text-center text-gray-500">${t('No data found', 'ไม่พบข้อมูล')}</td></tr>`;
+                renderPagination(type, dataList.length);
+                return;
+            }
+
+            pagedData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-800 hover:bg-gray-800/50 transition";
+                
+                let html = '';
+                columns.forEach(col => {
+                    if(col === 'id' && type === 'cases') html += `<td class="p-3">${start + index + 1}</td>`;
+                    else if(col === 'id') html += `<td class="p-3 csi-font text-cyan-200">${item.id}</td>`;
+                    else if(col === 'category' || col === 'name' || col === 'team') html += `<td class="p-3">${item[col]}</td>`;
+                    else if(col === 'teams') {
+                        let tstr = Array.isArray(item.teams) ? item.teams.join(', ') : item.teams || '-';
+                        html += `<td class="p-3 text-xs text-yellow-500">${tstr}</td>`;
+                    }
+                    else if(col === 'status') {
+                        const sColor = item.status === 'Active' ? 'text-green-400' : (item.status === 'Case ถูกส่งแล้ว' ? 'text-blue-400' : 'text-red-400');
+                        html += `<td class="p-3 font-bold ${sColor}">${item.status || 'Active'}</td>`;
+                    }
+                    else if(col === 'actions') {
+                        html += `<td class="p-3 text-right space-x-1 whitespace-nowrap">`;
+                        if(type === 'cases') {
+                            html += `<button onclick="openQuestionModal('${item.id}')" class="text-xs bg-purple-900/50 text-purple-300 px-2 py-1 rounded hover:bg-purple-800" title="Add Question"><i class="fa-solid fa-clipboard-question"></i></button>`;
+                            html += `<button onclick="openAssignModal('${item.id}')" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded hover:bg-blue-800" title="Assign Team"><i class="fa-solid fa-users-gear"></i></button>`;
+                        }
+                        html += `<button onclick="editItem('${type}', '${item.id}')" class="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded hover:bg-cyan-800" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
+                        html += `<button onclick="deleteItem('${type}', '${item.id}')" class="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded hover:bg-red-800" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
+                        html += `</td>`;
+                    }
+                });
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+
+            renderPagination(type, dataList.length);
+        }
+
+        function renderPagination(type, totalItems) {
+            const container = document.getElementById(`pagination-${type}`);
+            if(!container) return;
+            container.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / state.itemsPerPage);
+            if(totalPages <= 1) return;
+
+            for(let i=1; i<=totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1 text-sm border ${state.pagination[type] === i ? 'bg-cyan-900 border-cyan-400 text-white' : 'border-gray-700 text-gray-400 hover:border-cyan-400'} rounded`;
+                btn.innerText = i;
+                btn.onclick = () => { state.pagination[type] = i; renderData(); };
+                container.appendChild(btn);
+            }
+        }
+
+        // --- ADMIN CRUD LOGIC ---
+        async function saveData(type, data, actionName) {
+            showLoading();
+            try {
+                await apiCall(actionName, { type, data });
+                await fetchData(); 
+                closeModal(`modal-${type === 'cases' ? 'case' : type.replace(/s$/,'')}`);
+                showSuccess(t('Saved successfully', 'บันทึกสำเร็จ'));
+            } catch(e) {}
+        }
+
+        function editItem(type, id) {
+            const item = state.data[type].find(x => x.id === id);
+            if(!item) return;
+
+            if(type === 'cases') {
+                document.getElementById('case-id').value = item.id;
+                document.getElementById('case-category').value = item.category;
+                document.getElementById('case-name').value = item.name;
+                document.getElementById('case-status').value = item.status;
+                openModal('modal-case');
+            } else if (type === 'agents') {
+                document.getElementById('agent-old-id').value = item.id;
+                document.getElementById('agent-id').value = item.id;
+                document.getElementById('agent-name').value = item.name;
+                document.getElementById('agent-team').value = item.team;
+                openModal('modal-agent');
+            } else if (type === 'staff') {
+                document.getElementById('staff-old-id').value = item.id;
+                document.getElementById('staff-id').value = item.id;
+                document.getElementById('staff-name').value = item.name;
+                openModal('modal-staff');
+            }
+        }
+
+        async function deleteItem(type, id) {
+            const res = await Swal.fire({
+                title: t('Are you sure?', 'ยืนยันการลบ?'),
+                text: t("You won't be able to revert this!", "ข้อมูลจะไม่สามารถกู้คืนได้!"),
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f43f5e',
+                cancelButtonColor: '#374151',
+                confirmButtonText: t('Yes, delete it', 'ใช่, ลบเลย'),
+                background: '#111827', color: '#fff'
+            });
+
+            if(res.isConfirmed) {
+                showLoading();
+                try {
+                    await apiCall('deleteData', { type, id });
+                    await fetchData();
+                    showSuccess(t('Deleted', 'ลบเรียบร้อย'));
+                } catch(e){}
+            }
+        }
+
+        // Form Submit Handlers
+        function saveCase(e) {
+            e.preventDefault();
+            const data = {
+                id: document.getElementById('case-id').value || generateId(),
+                category: document.getElementById('case-category').value,
+                name: document.getElementById('case-name').value,
+                status: document.getElementById('case-status').value,
+                teams: state.data.cases.find(c => c.id === document.getElementById('case-id').value)?.teams || []
+            };
+            saveData('cases', data, 'saveData');
+        }
+
+        function saveAgent(e) {
+            e.preventDefault();
+            const data = {
+                oldId: document.getElementById('agent-old-id').value,
+                id: document.getElementById('agent-id').value,
+                name: document.getElementById('agent-name').value,
+                team: document.getElementById('agent-team').value
+            };
+            saveData('agents', data, 'saveData');
+        }
+
+        function saveStaff(e) {
+            e.preventDefault();
+            const data = {
+                oldId: document.getElementById('staff-old-id').value,
+                id: document.getElementById('staff-id').value,
+                name: document.getElementById('staff-name').value
+            };
+            saveData('staff', data, 'saveData');
+        }
+
+        // Assign Logic
+        function openAssignModal(caseId) {
+            document.getElementById('assign-case-id').value = caseId;
+            const c = state.data.cases.find(x => x.id === caseId);
+            const teams = Array.isArray(c.teams) ? c.teams : (c.teams ? c.teams.split(',').map(s=>s.trim()) : []);
+            
+            document.querySelectorAll('.team-cb').forEach(cb => {
+                cb.checked = teams.includes(cb.value) || teams.includes('All');
+            });
+            openModal('modal-assign');
+        }
+
+        function toggleAllTeams(allCb) {
+            document.querySelectorAll('.team-cb').forEach(cb => {
+                if(cb.value !== 'All') cb.checked = allCb.checked;
+            });
+        }
+
+        async function saveAssign(e) {
+            e.preventDefault();
+            const caseId = document.getElementById('assign-case-id').value;
+            let selected = [];
+            document.querySelectorAll('.team-cb:checked').forEach(cb => {
+                if(cb.value !== 'All') selected.push(cb.value);
+            });
+            
+            showLoading();
+            try {
+                await apiCall('assignCase', { caseId, teams: selected });
+                await fetchData();
+                closeModal('modal-assign');
+                showSuccess(t('Assigned', 'มอบหมายทีมสำเร็จ'));
+            } catch(e){}
+        }
+
+        // Question Logic
+        function openQuestionModal(caseId) {
+            document.getElementById('form-question').reset();
+            document.getElementById('q-case-id').value = caseId;
+            toggleSubQ(true);
+            toggleQTypeSetup();
+            
+            const parents = state.data.questions.filter(q => q.caseId === caseId && q.isMain === 'Yes');
+            const sel = document.getElementById('q-parent-id');
+            sel.innerHTML = parents.map(p => `<option value="${p.id}">${p.mainTopic}</option>`).join('');
+            
+            if(parents.length === 0) {
+                document.querySelector('input[name="q_is_main"][value="Yes"]').checked = true;
+                toggleSubQ(true);
+            }
+            openModal('modal-question');
+        }
+
+        function toggleSubQ(isMain) {
+            const c = document.getElementById('q-parent-container');
+            if(isMain) {
+                c.classList.add('hidden');
+                document.getElementById('q-parent-id').removeAttribute('required');
+            } else {
+                c.classList.remove('hidden');
+                document.getElementById('q-parent-id').setAttribute('required', 'true');
+            }
+        }
+
+        function toggleQTypeSetup() {
+            const type = document.getElementById('q-type').value;
+            const setup = document.getElementById('q-table-setup');
+            if(type === 'table') {
+                setup.classList.remove('hidden');
+                document.getElementById('q-table-cols').setAttribute('required', 'true');
+                document.getElementById('q-table-rows').setAttribute('required', 'true');
+            } else {
+                setup.classList.add('hidden');
+                document.getElementById('q-table-cols').removeAttribute('required');
+                document.getElementById('q-table-rows').removeAttribute('required');
+            }
+        }
+
+        function saveQuestion(e) {
+            e.preventDefault();
+            const data = {
+                id: generateId(),
+                caseId: document.getElementById('q-case-id').value,
+                isMain: document.querySelector('input[name="q_is_main"]:checked').value,
+                parentId: document.getElementById('q-parent-id').value || '',
+                mainTopic: document.getElementById('q-main-topic').value,
+                subTopic: document.getElementById('q-sub-topic').value,
+                type: document.getElementById('q-type').value,
+                tableCols: document.getElementById('q-table-cols').value || '',
+                tableRows: document.getElementById('q-table-rows').value || ''
+            };
+            saveData('questions', data, 'saveData');
+        }
+
+        // --- AGENT: WORKSPACE LOGIC ---
+        function renderAgentCases() {
+            const grid = document.getElementById('agent-case-grid');
+            grid.innerHTML = '';
+            
+            const myCases = state.data.cases.filter(c => {
+                if(c.status === 'Inactive') return false;
+                const teams = Array.isArray(c.teams) ? c.teams : (c.teams ? c.teams.split(',').map(s=>s.trim()) : []);
+                return teams.includes(state.user.team) || teams.includes('All');
+            });
+
+            if(myCases.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center p-8 text-gray-500">${t('No active cases for your team.', 'ไม่มีคดีที่ได้รับมอบหมาย')}</div>`;
+                return;
+            }
+
+            myCases.forEach(c => {
+                const isSubmitted = c.status === 'Case ถูกส่งแล้ว';
+                const card = document.createElement('div');
+                card.className = `csi-border rounded-lg p-5 cursor-pointer transition transform hover:-translate-y-1 ${isSubmitted ? 'bg-blue-900/20' : 'bg-gray-800/80 hover:bg-gray-800'}`;
+                card.onclick = () => openWorkspace(c.id);
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs px-2 py-1 rounded ${isSubmitted ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-400'} border border-current">
+                            ${isSubmitted ? t('SUBMITTED', 'ถูกส่งแล้ว') : t('ACTIVE', 'เปิดอยู่')}
+                        </span>
+                        <i class="fa-solid fa-folder-open text-cyan-700 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">${c.name}</h3>
+                    <p class="text-xs text-gray-400"><i class="fa-solid fa-tag"></i> ${c.category}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openWorkspace(caseId) {
+            state.currentCase = state.data.cases.find(c => c.id === caseId);
+            document.getElementById('ws-case-title').innerText = state.currentCase.name;
+            document.getElementById('ws-case-category').innerHTML = `<i class="fa-solid fa-folder"></i> ${state.currentCase.category}`;
+            document.getElementById('ws-case-team').innerHTML = `<i class="fa-solid fa-users"></i> Team ${state.user.team}`;
+            document.getElementById('ws-case-status').innerText = state.currentCase.status;
+
+            renderWorkspaceQuestions();
+            showView('view-workspace');
+        }
+
+        function renderWorkspaceQuestions() {
+            const container = document.getElementById('ws-questions-container');
+            container.innerHTML = '';
+            
+            const caseId = state.currentCase.id;
+            const team = state.user.team;
+            
+            const qs = state.data.questions.filter(q => q.caseId === caseId);
+            const mainQs = qs.filter(q => q.isMain === 'Yes');
+
+            mainQs.forEach((mq, index) => {
+                const block = document.createElement('div');
+                block.className = "p-4 border border-gray-700 rounded bg-gray-800/30";
+                
+                let html = `
+                    <h4 class="text-lg text-cyan-300 font-bold mb-1">${index + 1}. ${mq.mainTopic}</h4>
+                    ${mq.subTopic ? `<p class="text-sm text-gray-400 mb-3">${mq.subTopic}</p>` : ''}
+                `;
+                
+                html += renderAnswerUI(mq, team);
+
+                const subQs = qs.filter(q => q.parentId === mq.id);
+                if(subQs.length > 0) {
+                    html += `<div class="mt-4 pl-6 border-l-2 border-cyan-900 space-y-4">`;
+                    subQs.forEach((sq, sIdx) => {
+                        html += `
+                            <div>
+                                <h5 class="text-md text-cyan-200 mb-1">${index + 1}.${sIdx + 1} ${sq.mainTopic}</h5>
+                                ${sq.subTopic ? `<p class="text-sm text-gray-500 mb-2">${sq.subTopic}</p>` : ''}
+                                ${renderAnswerUI(sq, team)}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+                
+                block.innerHTML = html;
+                container.appendChild(block);
+            });
+        }
+
+        function renderAnswerUI(q, team) {
+            const caseId = state.currentCase.id;
+            const ansList = state.data.answers.filter(a => a.caseId === caseId && a.questionId === q.id && a.team === team);
+
+            let html = `<div class="mt-2" id="ans-container-${q.id}">`;
+
+            if(q.type === 'multiple') {
+                html += `<div class="space-y-2" id="list-${q.id}">`;
+                ansList.forEach(ans => {
+                    html += `
+                        <div class="flex gap-2 items-center">
+                            <i class="fa-solid fa-caret-right text-cyan-600"></i>
+                            <input type="text" class="csi-input flex-1 p-2 rounded text-sm" value="${ans.value}" onchange="saveAnswerVal('${ans.id}', this.value, '${q.id}')">
+                            <button onclick="deleteAnswer('${ans.id}', '${q.id}')" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                html += `<button onclick="addAnswerRow('${q.id}', 'multiple')" class="mt-2 text-xs text-cyan-500 hover:text-cyan-300"><i class="fa-solid fa-plus"></i> ${t('Add Answer', 'เพิ่มคำตอบ')}</button>`;
+            } 
+            else if (q.type === 'table') {
+                const cols = q.tableCols ? q.tableCols.split(',').map(s=>s.trim()) : [];
+                const rows = q.tableRows ? q.tableRows.split(',').map(s=>s.trim()) : [];
+                
+                html += `<div class="overflow-x-auto"><table class="w-full text-sm border-collapse border border-cyan-900 mt-2">`;
+                
+                html += `<thead><tr class="bg-cyan-900/30">`;
+                html += `<th class="border border-cyan-900 p-2"></th>`; 
+                cols.forEach(col => {
+                    html += `<th class="border border-cyan-900 p-2 text-cyan-200">${col}</th>`;
+                });
+                html += `</tr></thead><tbody>`;
+
+                rows.forEach((rowName, rIdx) => {
+                    html += `<tr>`;
+                    html += `<td class="border border-cyan-900 p-2 font-bold text-gray-300 bg-gray-800/50 min-w-[120px]">${rowName}</td>`;
+                    cols.forEach((colName, cIdx) => {
+                        const cellAns = ansList.find(a => a.rowIdx == rIdx && a.colIdx == cIdx);
+                        const val = cellAns ? cellAns.value : '';
+                        const ansId = cellAns ? cellAns.id : generateId();
+                        
+                        html += `<td class="border border-cyan-900 p-0 min-w-[200px]">
+                            <textarea class="w-full h-full min-h-[80px] bg-transparent border-none text-white p-2 focus:ring-1 focus:ring-cyan-500 resize-none text-xs" 
+                                onblur="saveCellAnswer('${ansId}', '${q.id}', ${rIdx}, ${cIdx}, this.value)" placeholder="...">`+val+`</textarea>
+                        </td>`;
+                    });
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        async function saveAnswerVal(ansId, value, qId) {
+            if(!value.trim()) return;
+            const data = { id: ansId, caseId: state.currentCase.id, questionId: qId, team: state.user.team, value: value, type: 'multiple' };
+            
+            let ansIndex = state.data.answers.findIndex(a => a.id === ansId);
+            if(ansIndex > -1) state.data.answers[ansIndex] = data;
+            else state.data.answers.push(data);
+
+            apiCall('saveAnswer', data).catch(e => console.error("Save failed", e));
+        }
+
+        async function saveCellAnswer(ansId, qId, rIdx, cIdx, value) {
+            const data = { id: ansId, caseId: state.currentCase.id, questionId: qId, team: state.user.team, value: value, type: 'table', rowIdx: rIdx, colIdx: cIdx };
+            
+            let ansIndex = state.data.answers.findIndex(a => a.id === ansId);
+            if(ansIndex > -1) state.data.answers[ansIndex] = data;
+            else state.data.answers.push(data);
+
+            apiCall('saveAnswer', data).catch(e => console.error("Save failed", e));
+        }
+
+        async function addAnswerRow(qId, type) {
+            const ansId = generateId();
+            const data = { id: ansId, caseId: state.currentCase.id, questionId: qId, team: state.user.team, value: '', type: type };
+            state.data.answers.push(data);
+            renderWorkspaceQuestions(); 
+            setTimeout(()=>{
+                const inputs = document.querySelectorAll(`#list-${qId} input`);
+                if(inputs.length > 0) inputs[inputs.length-1].focus();
+            }, 50);
+        }
+
+        async function deleteAnswer(ansId, qId) {
+            state.data.answers = state.data.answers.filter(a => a.id !== ansId);
+            renderWorkspaceQuestions();
+            apiCall('deleteAnswer', { id: ansId }).catch(e=>console.error(e));
+        }
+
+        async function submitCase() {
+            const res = await Swal.fire({
+                title: t('Submit Case?', 'ยืนยันการส่งรายงาน?'),
+                text: t("Status will change to Submitted, but you can still edit.", "สถานะคดีจะเปลี่ยนเป็น 'ส่งแล้ว' (ยังสามารถกลับมาแก้ไขได้)"),
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#374151',
+                confirmButtonText: t('Submit', 'ตกลงส่ง'),
+                background: '#111827', color: '#fff'
+            });
+
+            if(res.isConfirmed) {
+                showLoading();
+                try {
+                    await apiCall('updateCaseStatus', { caseId: state.currentCase.id, status: 'Case ถูกส่งแล้ว' });
+                    await fetchData();
+                    showView('view-agent');
+                    showSuccess(t('Case Submitted', 'ส่งคดีเรียบร้อย'));
+                } catch(e){}
+            }
+        }
+
+        applyLanguage();
+
+    </script>
+</body>
+</html>
