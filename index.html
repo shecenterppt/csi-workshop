@@ -991,7 +991,7 @@
             const mainQs = qs.filter(q => q.isMain === 'Yes');
             mainQs.forEach(mq => {
                 sortedQs.push(mq);
-                const subQs = qs.filter(q => q.parentId === mq.id);
+                const subQs = qs.filter(q => q.parentId === mq.id && q.isMain === 'No'); // <--- ADDED Condition
                 sortedQs.push(...subQs);
             });
 
@@ -1111,12 +1111,13 @@
             e.preventDefault();
             const qId = document.getElementById('q-id').value || generateId();
             const category = document.getElementById('q-category').value;
+            const isMain = document.querySelector('input[name="q_is_main"]:checked').value; // <--- Extract isMain
             
             const data = {
                 id: qId,
                 caseId: category, // MAGIC HERE: We save the "Category" into the "caseId" column to avoid breaking backend!
-                isMain: document.querySelector('input[name="q_is_main"]:checked').value,
-                parentId: document.getElementById('q-parent-id').value || '',
+                isMain: isMain,
+                parentId: isMain === 'Yes' ? '' : (document.getElementById('q-parent-id').value || ''), // <--- FIX HERE
                 mainTopic: document.getElementById('q-main-topic').value,
                 subTopic: document.getElementById('q-sub-topic').value,
                 type: document.getElementById('q-type').value,
@@ -1346,7 +1347,7 @@
                 
                 html += renderAnswerUI(mq, team);
 
-                const subQs = qs.filter(q => q.parentId === mq.id);
+                const subQs = qs.filter(q => q.parentId === mq.id && q.isMain === 'No'); // <--- ADDED Condition
                 if(subQs.length > 0) {
                     html += `<div class="mt-4 pl-6 border-l-2 border-cyan-900 space-y-4">`;
                     subQs.forEach((sq, sIdx) => {
