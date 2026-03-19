@@ -142,7 +142,7 @@
             <div class="csi-border bg-gray-900/90 p-8 rounded-lg w-full max-w-md text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-cyan-500/5 blur-xl"></div>
                 <i class="fa-solid fa-user-secret text-6xl text-cyan-500 mb-6 relative z-10"></i>
-                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Secuirty Workshop">ACCESS TERMINAL</h2>
+                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Security Workshop">ACCESS TERMINAL</h2>
                 <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="Enter Agent ID or Staff ID">Enter Agent ID or Staff ID</p>
                 
                 <form onsubmit="handleLogin(event)" class="relative z-10 space-y-4">
@@ -453,6 +453,7 @@
                     <select id="q-type" class="csi-input w-full p-2 rounded text-sm" required onchange="toggleQTypeSetup()">
                         <option value="multiple">เพิ่มคำตอบได้มากกว่า 1 คำตอบ (List)</option>
                         <option value="table">ตาราง (Table Grid)</option>
+                        <option value="header">หัวข้อหลัก (ไม่ต้องตอบ)</option>
                     </select>
                 </div>
 
@@ -1003,7 +1004,10 @@
                     topicText = `<span class="text-gray-500 ml-4"><i class="fa-solid fa-level-up-alt fa-rotate-90"></i> ${q.mainTopic}</span>`;
                 }
 
-                let typeText = q.type === 'table' ? t('Table', 'ตาราง') : t('List', 'รายการ');
+                let typeText = '';
+                if (q.type === 'table') typeText = t('Table', 'ตาราง');
+                else if (q.type === 'header') typeText = t('Header', 'หัวข้อหลัก');
+                else typeText = t('List', 'รายการ');
 
                 tr.innerHTML = `
                     <td class="p-3 text-cyan-600">${idx + 1}</td>
@@ -1331,11 +1335,12 @@
             }
 
             mainQs.forEach((mq, index) => {
+                const isHeader = mq.type === 'header';
                 const block = document.createElement('div');
-                block.className = "p-4 border border-gray-700 rounded bg-gray-800/30";
+                block.className = isHeader ? "p-4 border-l-4 border-cyan-500 bg-cyan-900/20 rounded mt-4" : "p-4 border border-gray-700 rounded bg-gray-800/30";
                 
                 let html = `
-                    <h4 class="text-lg text-cyan-300 font-bold mb-1">${index + 1}. ${mq.mainTopic}</h4>
+                    <h4 class="${isHeader ? 'text-xl text-cyan-200' : 'text-lg text-cyan-300'} font-bold mb-1">${index + 1}. ${mq.mainTopic}</h4>
                     ${mq.subTopic ? `<p class="text-sm text-gray-400 mb-3">${mq.subTopic}</p>` : ''}
                 `;
                 
@@ -1345,9 +1350,10 @@
                 if(subQs.length > 0) {
                     html += `<div class="mt-4 pl-6 border-l-2 border-cyan-900 space-y-4">`;
                     subQs.forEach((sq, sIdx) => {
+                        const isSubHeader = sq.type === 'header';
                         html += `
-                            <div>
-                                <h5 class="text-md text-cyan-200 mb-1">${index + 1}.${sIdx + 1} ${sq.mainTopic}</h5>
+                            <div class="${isSubHeader ? 'bg-cyan-900/10 p-3 border-l-2 border-cyan-500 rounded' : ''}">
+                                <h5 class="text-md ${isSubHeader ? 'text-cyan-300 font-bold' : 'text-cyan-200'} mb-1">${index + 1}.${sIdx + 1} ${sq.mainTopic}</h5>
                                 ${sq.subTopic ? `<p class="text-sm text-gray-500 mb-2">${sq.subTopic}</p>` : ''}
                                 ${renderAnswerUI(sq, team)}
                             </div>
@@ -1362,6 +1368,8 @@
         }
 
         function renderAnswerUI(q, team) {
+            if (q.type === 'header') return ''; // ไม่ต้องแสดงช่องตอบคำถาม
+
             const caseId = state.currentCase.id; // Answers still belong to the specific case instance!
             const ansList = state.data.answers.filter(a => a.caseId === caseId && a.questionId === q.id && a.team === team);
 
