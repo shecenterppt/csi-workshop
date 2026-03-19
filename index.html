@@ -142,11 +142,11 @@
             <div class="csi-border bg-gray-900/90 p-8 rounded-lg w-full max-w-md text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-cyan-500/5 blur-xl"></div>
                 <i class="fa-solid fa-user-secret text-6xl text-cyan-500 mb-6 relative z-10"></i>
-                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Security Workshop">ACCESS TERMINAL</h2>
+                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Secuirty Workshop">ACCESS TERMINAL</h2>
                 <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="Enter Agent ID or Staff ID">Enter Agent ID or Staff ID</p>
                 
                 <form onsubmit="handleLogin(event)" class="relative z-10 space-y-4">
-                    <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., A1000)" required autocomplete="off">
+                    <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., 00000)" required autocomplete="off">
                     <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="INITIALIZE">INITIALIZE</button>
                 </form>
             </div>
@@ -168,7 +168,7 @@
                     <h2 class="text-xl csi-font text-white" data-en="Case Files" data-th="แฟ้มคดี (Case)">Case Files</h2>
                     <div class="space-x-2">
                         <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
-                        <button onclick="openModal('modal-case')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Case" data-th="+ เพิ่ม Case">+ New Case</button>
+                        <button onclick="openNewCaseModal()" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Case" data-th="+ เพิ่ม Case">+ New Case</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
@@ -230,7 +230,7 @@
                         <button onclick="document.getElementById('import-agents-file').click()" class="csi-btn csi-btn-success px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-import"></i> <span data-en="Import CSV" data-th="นำเข้า CSV">Import CSV</span></button>
                         <button onclick="exportCSV('agents')" class="csi-btn px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-csv"></i> <span data-en="Export CSV" data-th="ส่งออก CSV">Export CSV</span></button>
                         <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
-                        <button onclick="openModal('modal-agent')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Agent" data-th="+ เพิ่ม Agent">+ New Agent</button>
+                        <button onclick="openNewAgentModal()" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Agent" data-th="+ เพิ่ม Agent">+ New Agent</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
@@ -258,7 +258,7 @@
                         <button onclick="document.getElementById('import-staff-file').click()" class="csi-btn csi-btn-success px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-import"></i> <span data-en="Import CSV" data-th="นำเข้า CSV">Import CSV</span></button>
                         <button onclick="exportCSV('staff')" class="csi-btn px-3 py-2 rounded text-sm"><i class="fa-solid fa-file-csv"></i> <span data-en="Export CSV" data-th="ส่งออก CSV">Export CSV</span></button>
                         <button onclick="fetchData()" class="csi-btn px-4 py-2 rounded"><i class="fa-solid fa-sync"></i></button>
-                        <button onclick="openModal('modal-staff')" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Staff" data-th="+ เพิ่ม Staff">+ New Staff</button>
+                        <button onclick="openNewStaffModal()" class="csi-btn px-4 py-2 rounded bg-cyan-900/30" data-en="+ New Staff" data-th="+ เพิ่ม Staff">+ New Staff</button>
                     </div>
                 </div>
                 <div class="overflow-x-auto csi-border rounded bg-gray-900/50">
@@ -416,7 +416,7 @@
             <form id="form-question" onsubmit="saveQuestion(event)" class="space-y-4">
                 <input type="hidden" id="q-id">
                 
-                <!-- Category Select (แทนที่ Case ID เดิม) -->
+                <!-- Category Select -->
                 <div>
                     <label class="block text-xs text-gray-400 mb-1" data-en="Category" data-th="หมวดหมู่">Category</label>
                     <select id="q-category" class="csi-input w-full p-2 rounded text-sm border-cyan-400" required onchange="updateParentQuestionList()">
@@ -593,6 +593,27 @@
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('form-'+id.split('-')[1])?.reset(); }
+
+        // --- EXPLICIT RESET FUNCTIONS FOR "NEW" MODALS ---
+        function openNewCaseModal() {
+            document.getElementById('form-case').reset();
+            document.getElementById('case-id').value = '';
+            openModal('modal-case');
+        }
+
+        function openNewAgentModal() {
+            document.getElementById('form-agent').reset();
+            document.getElementById('agent-old-id').value = '';
+            document.getElementById('agent-id').value = '';
+            openModal('modal-agent');
+        }
+
+        function openNewStaffModal() {
+            document.getElementById('form-staff').reset();
+            document.getElementById('staff-old-id').value = '';
+            document.getElementById('staff-id').value = '';
+            openModal('modal-staff');
+        }
 
         function showLoading(text = t('Processing...', 'กำลังประมวลผล...')) {
             Swal.fire({ title: text, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }, background: '#111827', color: '#0ff' });
@@ -1120,7 +1141,9 @@
                     closeModal(`modal-${type === 'cases' ? 'case' : type.replace(/s$/,'')}`);
                 }
                 showSuccess(t('Saved successfully', 'บันทึกสำเร็จ'));
-            } catch(e) {}
+            } catch(e) {
+                showError(t('Save failed: ', 'บันทึกไม่สำเร็จ: ') + e.message);
+            }
         }
 
         function editItem(type, id) {
@@ -1169,7 +1192,9 @@
                     if (type === 'questions') {
                         renderQuestionsTable();
                     }
-                } catch(e){}
+                } catch(e){
+                    showError(t('Delete failed: ', 'ลบไม่สำเร็จ: ') + e.message);
+                }
             }
         }
 
@@ -1237,7 +1262,9 @@
                 await fetchData();
                 closeModal('modal-assign');
                 showSuccess(t('Assigned', 'มอบหมายทีมสำเร็จ'));
-            } catch(e){}
+            } catch(e){
+                showError(t('Assignment failed: ', 'มอบหมายไม่สำเร็จ: ') + e.message);
+            }
         }
 
         // --- AGENT: WORKSPACE LOGIC ---
@@ -1446,7 +1473,9 @@
                     await fetchData();
                     showView('view-agent');
                     showSuccess(t('Case Submitted', 'ส่งคดีเรียบร้อย'));
-                } catch(e){}
+                } catch(e){
+                     showError(t('Submit failed: ', 'ส่งคดีไม่สำเร็จ: ') + e.message);
+                }
             }
         }
 
