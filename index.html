@@ -128,7 +128,7 @@
                     <div id="user-info-name" class="text-sm font-bold text-gray-200"></div>
                     <div id="user-info-role" class="text-xs text-cyan-500 csi-font"></div>
                 </div>
-                <button onclick="toggleLanguage()" class="csi-btn px-3 py-1 rounded text-sm"><i class="fa-solid fa-globe"></i> <span id="lang-text">TH</span></button>
+                <button onclick="toggleLanguage()" class="csi-btn px-3 py-1 rounded text-sm"><i class="fa-solid fa-globe"></i> <span id="lang-text">EN</span></button>
                 <button onclick="logout()" class="csi-btn csi-btn-danger px-3 py-1 rounded text-sm"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </div>
@@ -142,12 +142,12 @@
             <div class="csi-border bg-gray-900/90 p-8 rounded-lg w-full max-w-md text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-cyan-500/5 blur-xl"></div>
                 <i class="fa-solid fa-user-secret text-6xl text-cyan-500 mb-6 relative z-10"></i>
-                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="Security Workshop">ACCESS TERMINAL</h2>
-                <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="Enter Agent ID or Staff ID">Enter Agent ID or Staff ID</p>
+                <h2 class="csi-font text-3xl text-white mb-2 relative z-10" data-en="ACCESS TERMINAL" data-th="ระบบสืบสวน">ACCESS TERMINAL</h2>
+                <p class="text-gray-400 text-sm mb-8 relative z-10" data-en="Enter Agent ID or Staff ID" data-th="กรุณากรอกรหัสเจ้าหน้าที่">Enter Agent ID or Staff ID</p>
                 
                 <form onsubmit="handleLogin(event)" class="relative z-10 space-y-4">
-                    <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., A10000)" required autocomplete="off">
-                    <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="INITIALIZE">INITIALIZE</button>
+                    <input type="text" id="login-id" class="csi-input w-full p-3 rounded text-center text-xl tracking-widest csi-font uppercase" placeholder="ID (e.g., 00000)" required autocomplete="off">
+                    <button type="submit" class="csi-btn w-full p-3 rounded font-bold tracking-widest" data-en="INITIALIZE" data-th="เข้าสู่ระบบ">INITIALIZE</button>
                 </form>
             </div>
         </div>
@@ -351,6 +351,27 @@
 
     <!-- MODALS -->
 
+    <!-- Modal: View Answers (Admin Only) -->
+    <div id="modal-view-answers" class="modal-overlay fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="csi-border bg-gray-900 rounded-lg w-full max-w-5xl p-6 h-[90vh] flex flex-col relative">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-gray-700 pb-4 gap-4">
+                <div>
+                    <h3 class="text-2xl text-cyan-400 csi-font font-bold" id="view-ans-case-title">Case Title</h3>
+                    <p class="text-sm text-gray-400" id="view-ans-case-category">Category</p>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <label class="text-sm text-cyan-300 whitespace-nowrap" data-en="Select Team:" data-th="เลือกทีม:">Select Team:</label>
+                    <select id="view-ans-team-select" class="csi-input p-2 rounded text-sm w-full md:w-40" onchange="changeViewAnswersTeam()"></select>
+                    <button type="button" onclick="closeModal('modal-view-answers')" class="csi-btn csi-btn-danger px-4 py-2 rounded text-sm whitespace-nowrap"><i class="fa-solid fa-times"></i> <span data-en="Close" data-th="ปิด">Close</span></button>
+                </div>
+            </div>
+            <input type="hidden" id="view-ans-case-id">
+            <div id="view-answers-content" class="overflow-y-auto flex-1 pr-2 space-y-6">
+                <!-- Rendered read-only content goes here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Case -->
     <div id="modal-case" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
         <div class="csi-border bg-gray-900 rounded-lg w-full max-w-md p-6">
@@ -538,7 +559,7 @@
         
         // --- STATE MANAGEMENT ---
         let state = {
-            lang: 'th',
+            lang: 'en',
             user: null, 
             data: {
                 cases: [],
@@ -704,13 +725,15 @@
                 });
 
                 if(res.isConfirmed) {
-                    showLoading();
+                    showLoading(t('Importing data... Please wait', 'กำลังนำเข้าข้อมูล... กรุณารอสักครู่'));
                     try {
-                        await apiCall('importBulkData', { type: type, data: parsedData });
+                        for (let i = 0; i < parsedData.length; i++) {
+                            await apiCall('saveData', { type: type, data: parsedData[i] });
+                        }
                         await fetchData();
                         showSuccess(t('Import Successful', 'นำเข้าข้อมูลสำเร็จ'));
                     } catch (err) {
-                        showError(t('Import failed. Make sure backend is updated.', 'การนำเข้าล้มเหลว กรุณาตรวจสอบโค้ด Backend'));
+                        showError(t('Import failed: ', 'การนำเข้าล้มเหลว: ') + err.message);
                     }
                 }
                 event.target.value = ''; 
@@ -957,6 +980,7 @@
                     else if(col === 'actions') {
                         html += `<td class="p-3 text-right space-x-1 whitespace-nowrap">`;
                         if(type === 'cases') {
+                            html += `<button onclick="openViewAnswersModal('${item.id}')" class="text-xs bg-green-900/50 text-green-300 px-2 py-1 rounded hover:bg-green-800" title="View Answers"><i class="fa-solid fa-eye"></i></button>`;
                             html += `<button onclick="openAssignModal('${item.id}')" class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded hover:bg-blue-800" title="Assign Team"><i class="fa-solid fa-users-gear"></i></button>`;
                         }
                         html += `<button onclick="editItem('${type}', '${item.id}')" class="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded hover:bg-cyan-800" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
@@ -1270,6 +1294,144 @@
             } catch(e){
                 showError(t('Assignment failed: ', 'มอบหมายไม่สำเร็จ: ') + e.message);
             }
+        }
+
+        // --- ADMIN: VIEW ANSWERS LOGIC ---
+        function openViewAnswersModal(caseId) {
+            const currentCase = state.data.cases.find(c => c.id === caseId);
+            if(!currentCase) return;
+
+            document.getElementById('view-ans-case-id').value = caseId;
+            document.getElementById('view-ans-case-title').innerText = currentCase.name;
+            document.getElementById('view-ans-case-category').innerText = currentCase.category;
+
+            const teamSelect = document.getElementById('view-ans-team-select');
+            teamSelect.innerHTML = '';
+            
+            // Extract assigned teams
+            let assignedTeams = Array.isArray(currentCase.teams) ? currentCase.teams : (currentCase.teams ? currentCase.teams.split(',').map(s=>s.trim()) : []);
+            
+            // Handle "All" case
+            if (assignedTeams.includes('All')) {
+                assignedTeams = ['Alpha', 'Bravo', 'Delta', 'Sigma']; // All possible teams based on current spec
+            }
+
+            if (assignedTeams.length === 0) {
+                teamSelect.innerHTML = `<option value="">No Teams</option>`;
+            } else {
+                assignedTeams.forEach(t => {
+                    teamSelect.innerHTML += `<option value="${t}">Team ${t}</option>`;
+                });
+            }
+
+            openModal('modal-view-answers');
+            changeViewAnswersTeam();
+        }
+
+        function changeViewAnswersTeam() {
+            const caseId = document.getElementById('view-ans-case-id').value;
+            const team = document.getElementById('view-ans-team-select').value;
+            const container = document.getElementById('view-answers-content');
+            
+            if (!team) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-10">${t('No teams assigned to this case.', 'ไม่มีทีมที่ได้รับมอบหมายในคดีนี้')}</div>`;
+                return;
+            }
+
+            const currentCase = state.data.cases.find(c => c.id === caseId);
+            const category = currentCase.category;
+            
+            // Fetch questions matching the case category
+            const qs = state.data.questions.filter(q => q.caseId === category);
+            const mainQs = qs.filter(q => q.isMain === 'Yes');
+
+            if(mainQs.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-gray-500 border border-dashed border-gray-700 rounded-lg">ไม่พบชุดคำถามสำหรับหมวดหมู่ "${category}"</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            mainQs.forEach((mq, index) => {
+                const isHeader = mq.type === 'header';
+                const block = document.createElement('div');
+                block.className = isHeader ? "p-4 border-l-4 border-cyan-500 bg-cyan-900/20 rounded mt-4" : "p-4 border border-gray-700 rounded bg-gray-800/30";
+                
+                let html = `
+                    <h4 class="${isHeader ? 'text-xl text-cyan-200' : 'text-lg text-cyan-300'} font-bold mb-1">${index + 1}. ${mq.mainTopic}</h4>
+                    ${mq.subTopic ? `<p class="text-sm text-gray-400 mb-3">${mq.subTopic}</p>` : ''}
+                `;
+                
+                html += renderReadOnlyAnswerUI(mq, caseId, team);
+
+                const subQs = qs.filter(q => q.parentId === mq.id && q.isMain === 'No');
+                if(subQs.length > 0) {
+                    html += `<div class="mt-4 pl-6 border-l-2 border-cyan-900 space-y-4">`;
+                    subQs.forEach((sq, sIdx) => {
+                        const isSubHeader = sq.type === 'header';
+                        html += `
+                            <div class="${isSubHeader ? 'bg-cyan-900/10 p-3 border-l-2 border-cyan-500 rounded' : ''}">
+                                <h5 class="text-md ${isSubHeader ? 'text-cyan-300 font-bold' : 'text-cyan-200'} mb-1">${index + 1}.${sIdx + 1} ${sq.mainTopic}</h5>
+                                ${sq.subTopic ? `<p class="text-sm text-gray-500 mb-2">${sq.subTopic}</p>` : ''}
+                                ${renderReadOnlyAnswerUI(sq, caseId, team)}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+                
+                block.innerHTML = html;
+                container.appendChild(block);
+            });
+        }
+
+        function renderReadOnlyAnswerUI(q, caseId, team) {
+            if (q.type === 'header') return ''; 
+
+            const ansList = state.data.answers.filter(a => a.caseId === caseId && a.questionId === q.id && a.team === team);
+
+            let html = `<div class="mt-2 text-sm text-gray-300">`;
+
+            if(q.type === 'multiple') {
+                if(ansList.length === 0) {
+                    html += `<p class="italic text-gray-600">- ${t('No answers submitted', 'ยังไม่มีคำตอบ')} -</p>`;
+                } else {
+                    html += `<ul class="list-disc list-inside pl-4 space-y-2 mt-3">`;
+                    ansList.forEach(ans => {
+                        html += `<li class="text-green-300">${ans.value || '-'}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+            } 
+            else if (q.type === 'table') {
+                const cols = q.tableCols ? q.tableCols.split(',').map(s=>s.trim()) : [];
+                const rows = q.tableRows ? q.tableRows.split(',').map(s=>s.trim()) : [];
+                
+                html += `<div class="overflow-x-auto"><table class="w-full text-sm border-collapse border border-cyan-900 mt-2">`;
+                
+                html += `<thead><tr class="bg-cyan-900/30">`;
+                html += `<th class="border border-cyan-900 p-2"></th>`; 
+                cols.forEach(col => {
+                    html += `<th class="border border-cyan-900 p-2 text-cyan-200">${col}</th>`;
+                });
+                html += `</tr></thead><tbody>`;
+
+                rows.forEach((rowName, rIdx) => {
+                    html += `<tr>`;
+                    html += `<td class="border border-cyan-900 p-2 font-bold text-gray-300 bg-gray-800/50 min-w-[120px]">${rowName}</td>`;
+                    cols.forEach((colName, cIdx) => {
+                        const cellAns = ansList.find(a => a.rowIdx == rIdx && a.colIdx == cIdx);
+                        const val = cellAns && cellAns.value ? cellAns.value : '-';
+                        
+                        html += `<td class="border border-cyan-900 p-3 min-w-[200px] whitespace-pre-wrap align-top text-green-300 font-medium">${val}</td>`;
+                    });
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div>`;
+            }
+
+            html += `</div>`;
+            return html;
         }
 
         // --- AGENT: WORKSPACE LOGIC ---
